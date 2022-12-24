@@ -4,7 +4,7 @@ defmodule Derailed.Guilds do
 
   @impl true
   def start(_type, _args) do
-    result = Guilds.Supervisor.start_link(name: Guilds.Supervisor)
+    result = Derailed.Guilds.Supervisor.start_link(name: Guilds.Supervisor)
     Logger.info "Starting Guild Supervisor with PID: #{inspect(elem(result, 1))}"
     result
   end
