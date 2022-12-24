@@ -1,0 +1,4 @@
+%{
+  "fastglobal": {:hex, :fastglobal, "1.0.0", "f3133a0cda8e9408aac7281ec579c4b4a8386ce0e99ca55f746b9f58192f455b", [:mix], [], "hexpm", "cfdb7ed63910bc75f579cd09e2517618fa9418b56731d51d03f7ba4b400798d0"},
+  "manifold": {:hex, :manifold, "1.5.1", "0343bb9735a2537bd78ed80f325a2eb1266f8c107cc1e67c49fb48cf0fd225fa", [:mix], [], "hexpm", "358381e789d46920f55429c248680b85f037a9bb64a08dc2a26531aa304ee42c"},
+}
