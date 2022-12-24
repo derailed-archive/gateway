@@ -13,7 +13,7 @@ pid = Node.spawn_link(
   end
 )
 IO.puts("#{inspect pid}")
-Node.connect(:"guilds@VincentButPC")
+Node.connect(:"guilds@#{hostname}}")
 guild_pid = Guild.Registry.get_guild("2134982149")
 IO.puts('Got Guild')
 Guild.subscribe(guild_pid, "21397124")

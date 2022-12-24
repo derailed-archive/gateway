@@ -9,9 +9,9 @@ defmodule Derailed.Guilds.Supervisor do
 
   @impl true
   def init(:ok) do
-    Logger.info("Initiating Supervision")
-    opts = [strategy: :one_for_one, name: Guilds]
+    Logger.info("Initiating Supervision of Guilds")
+    opts = [strategy: :one_for_one, name: Derailed.Guilds]
 
-    Supervisor.init([Guild.Registry], opts)
+    Supervisor.init([Derailed.Guild.Registry], opts)
   end
 end

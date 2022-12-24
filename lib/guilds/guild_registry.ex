@@ -22,7 +22,7 @@ defmodule Derailed.Guild.Registry do
     case Map.get(state, guild_id) do
       nil ->
         # not found, time to make a new process
-        {:ok, pid} = Guild.start(guild_id)
+        {:ok, pid} = Derailed.Guild.start(guild_id)
         {:reply, pid, Map.put(state, guild_id, pid)}
       gpid ->
         # we found the guild!

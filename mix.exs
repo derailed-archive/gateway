@@ -14,8 +14,8 @@ defmodule Derailed.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      # mod: {Guilds, []},
-      extra_applications: [:logger]
+      mod: {Derailed, []},
+      extra_applications: [:logger, :crypto]
     ]
   end
 
@@ -23,7 +23,9 @@ defmodule Derailed.MixProject do
   defp deps do
     [
       {:fastglobal, "~> 1.0"},
-      {:manifold, "~> 1.5.1"}
+      {:manifold, "~> 1.5.1"},
+      {:mongodb, "~> 1.0.0-beta.1"},
+      {:dotenvy, "~> 0.7.0"}
     ]
   end
 end
