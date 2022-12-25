@@ -10,6 +10,26 @@ defmodule Derailed.Ready do
     |> Base.encode16(case: :lower)
   end
 
+  @spec check_token(String.t) :: Map
+  def check_token(token) do
+    # this is kinda jank but basically
+    # it just gets the first part of the JWT, the headers
+    [encoded_headers, _, _] = String.split token, "."
+    {:ok, headers} = encoded_headers |> Base.url_decode64
+
+    {:ok, decoded} = Jason.decode(headers)
+
+    user_id = Map.get(decoded, "user_id")
+
+    user = Mongo.find_one(:mongo, "users", %{_id: user_id})
+
+    if user == nil do
+      {:error, nil}
+    end
+
+    {:ok, user}
+  end
+
   @spec spin_up(pid, String.t) :: Map
   def spin_up(ws_pid, user_id) do
     user = Mongo.find_one(:mongo, "users", %{_id: user_id})
