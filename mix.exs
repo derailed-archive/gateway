@@ -28,6 +28,7 @@ defmodule Derailed.MixProject do
       {:dotenvy, "~> 0.7.0"},
       {:joken, "~> 2.5"},
       {:jason, "~> 1.4"},
+      {:gen_registry, "~> 1.3.0"},
       {:patch, "~> 0.12.0", only: [:test]}
     ]
   end

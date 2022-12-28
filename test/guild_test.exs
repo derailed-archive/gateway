@@ -5,7 +5,10 @@ defmodule Derailed.Guild.Test do
 
   setup do
     # spin up a guild with a random testing id
-    pid = Derailed.Guild.Registry.get_guild("238214721984")
+    {:ok, pid} = GenRegistry.lookup_or_start(Derailed.Guild, "9421837217121", ["21314124"])
+
+    on_exit(fn -> GenRegistry.stop(Derailed.Guild, "9421837217121") end)
+
     {:ok, gpid: pid}
   end
 

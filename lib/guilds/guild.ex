@@ -3,9 +3,9 @@ defmodule Derailed.Guild do
   require Logger
 
   # client
-  def start(guild_id) do
-    Logger.debug "Spinning up Guild #{inspect guild_id}"
-    GenServer.start(__MODULE__, guild_id)
+  def start_link(guild_id) do
+    Logger.debug "Spinning up new Guild"
+    GenServer.start_link(__MODULE__, guild_id)
   end
 
   @spec subscribe(pid(), pid()) :: :ok
@@ -48,7 +48,11 @@ defmodule Derailed.Guild do
 
   def handle_cast({:unsubscribe, session_pid}, state) do
     Logger.debug("Unsubscribing #{inspect session_pid} from #{state.id}")
-    {:noreply, %{state | sessions: MapSet.delete(state.sessions, session_pid)}}
+    new_map = MapSet.delete(state.sessions, session_pid)
+
+    # TODO: Stop GenServer when MapSet.equal?(new_map, MapSet.new())
+
+    {:noreply, %{state | sessions: new_map}}
   end
 
   def handle_cast({:publish, message}, state) do

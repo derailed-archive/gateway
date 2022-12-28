@@ -12,6 +12,6 @@ defmodule Derailed.Supervisor do
     Logger.info("Initiating Supervision of Derailed")
     opts = [strategy: :one_for_one, name: Derailed]
 
-    Supervisor.init([Derailed.Guild.Supervisor], opts)
+    Supervisor.init([Derailed.Guild.Supervisor, Derailed.Session.Supervisor], opts)
   end
 end
