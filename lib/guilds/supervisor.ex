@@ -1,4 +1,4 @@
-defmodule Derailed.Guilds.Supervisor do
+defmodule Derailed.Guild.Supervisor do
   use Supervisor
   require Logger
 
