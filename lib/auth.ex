@@ -15,6 +15,7 @@ defmodule Derailed.Auth do
 
         case user do
           {:error, _reason} -> {:error, :invalid_token}
+          nil -> {:error, :invalid_token}
           _ ->
             signer = Joken.Signer.create("HS256", Map.get(user, "password"))
             res = Joken.Signer.verify(token, signer)

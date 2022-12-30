@@ -29,7 +29,10 @@ defmodule Derailed.MixProject do
       {:joken, "~> 2.5"},
       {:jason, "~> 1.4"},
       {:gen_registry, "~> 1.3.0"},
-      {:patch, "~> 0.12.0", only: [:test]}
+      {:grpc, "~> 0.5.0"},
+      {:protobuf, "~> 0.11.0"},
+      {:hammer, "~> 6.1"},
+      {:patch, "~> 0.12.0", only: [:test]},
     ]
   end
 end
