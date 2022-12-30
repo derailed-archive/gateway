@@ -12,6 +12,6 @@ defmodule Derailed.Crossway.Supervisor do
     Logger.info("Initiating Supervision of The Crossway")
     opts = [strategy: :one_for_one, name: Derailed.Crossway]
 
-    Supervisor.init([GRPC.Server.Supervisor.child_spec(Derailed.Crossway.Guild.Endpoint, 50051)], opts)
+    Supervisor.init([GRPC.Server.Supervisor.child_spec(Derailed.Crossway.Guild.Endpoint, 50051), GRPC.Server.Supervisor.child_spec(Derailed.Crossway.User.Endpoint, 50052)], opts)
   end
 end

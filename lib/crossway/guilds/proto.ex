@@ -1,4 +1,4 @@
-defmodule Derailed.Crossway.Guild.Proto.Message do
+defmodule Derailed.Crossway.Proto.Message do
   use Protobuf, protoc_gen_elixir_version: "1.14.0", syntax: :proto3
 
   field :event, 1, type: :string
@@ -9,7 +9,7 @@ defmodule Derailed.Crossway.Guild.Proto.Publ do
   use Protobuf, protoc_gen_elixir_version: "1.14.0", syntax: :proto3
 
   field :guild_id, 1, type: :string
-  field :message, 2, type: Derailed.Crossway.Guild.Proto.Message
+  field :message, 2, type: Derailed.Crossway.Proto.Message
 end
 
 defmodule Derailed.Crossway.Guild.Proto.Publr do

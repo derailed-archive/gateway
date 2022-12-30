@@ -19,7 +19,7 @@ defmodule Derailed.Crossway.Guild.Test do
   end
 
   test "publish simple message", context do
-    request = Derailed.Crossway.Guild.Proto.Publ.new(guild_id: "9421837217121", message: Derailed.Crossway.Guild.Proto.Message.new(event: "TEST", data: "{\"hello\":\"world\"}"))
+    request = Derailed.Crossway.Guild.Proto.Publ.new(guild_id: "9421837217121", message: Derailed.Crossway.Proto.Message.new(event: "TEST", data: "{\"hello\":\"world\"}"))
     {:ok, reply} = Derailed.Crossway.Guild.Proto.Stub.publish(context[:channel], request)
     assert reply.message == "Success"
   end

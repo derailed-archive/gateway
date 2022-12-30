@@ -61,7 +61,9 @@ defmodule Derailed.Guild do
     Logger.debug("Unsubscribing #{inspect session_pid} from #{state.id}")
     new_map = MapSet.delete(state.sessions, session_pid)
 
-    # TODO: Stop GenServer when MapSet.equal?(new_map, MapSet.new())
+    if new_map == MapSet.new() do
+      {:stop, :no_sessions, state}
+    end
 
     {:noreply, %{state | sessions: new_map}}
   end

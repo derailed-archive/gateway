@@ -17,9 +17,13 @@ defmodule Derailed.Ready do
       {:error, _reason} -> {:error, :invalid_auth}
       {:ok, user} ->
         session_id = generate_session_id()
-        {:ok, pid} = GenRegistry.start(Derailed.Session, session_id, [pid])
+        user_id = Map.get(user, "id")
+        {:ok, reg_pid} = GenRegistry.lookup_or_start(Derailed.Session.Registry, user_id, [user_id])
 
-        memberships = Mongo.find(:mongo, "users", %{user_id: Map.get(user, "id")})
+        {:ok, session_pid} = Derailed.Session.start_link(user_id, pid)
+        Derailed.Session.Registry.add_session(reg_pid, session_pid)
+
+        memberships = Mongo.find(:mongo, "users", %{user_id: user_id})
 
         membership_list = Enum.to_list(memberships)
         guild_pids = MapSet.new()
@@ -31,7 +35,7 @@ defmodule Derailed.Ready do
           Derailed.Guild.subscribe(pid, pid)
         end
 
-        {:ok, user, guild_pids, pid, session_id}
+        {:ok, user, guild_pids, session_pid, session_id}
     end
   end
 end
