@@ -11,11 +11,11 @@ It's done quite simple.
 
 For Guilds it's like:
 
-API -> gRPC -> Get Guild PID -> Publish of available
+API -> gRPC -> Get Guild PID -> Publish if available
 
 And for Users it's like:
 
-API -> gRPC -> Get Session Registry -> Publish to all Sessions
+API -> gRPC -> Get Session Registry -> Publish to all Sessions, if any
 
 ## Why Elixir?
 
@@ -35,5 +35,5 @@ a microservice-like architecture and design.
 
 ## Documentation
 
-We don't currently have no documentation because of Derailed still being in pre-alpha stage.
+We don't currently have any documentation because of Derailed still being in a pre-alpha stage.
 Just give us some time.. we need a complete API first!
