@@ -12,6 +12,15 @@ defmodule Derailed.Supervisor do
     Logger.info("Initiating Supervision of Derailed")
     opts = [strategy: :one_for_one, name: Derailed]
 
-    Supervisor.init([Derailed.Guild.Supervisor, Derailed.Session.Supervisor], opts)
+    Dotenvy.source([".env", System.get_env()])
+
+    Supervisor.init(
+      [
+        Derailed.Guild.Supervisor,
+        Derailed.Session.Supervisor,
+        {Mongo, name: :mongo, database: "derailed", pool_size: 2, url: Dotenvy.env!("MONGODB_URI", :string!)}
+      ],
+        opts
+    )
   end
 end
