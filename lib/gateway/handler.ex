@@ -49,12 +49,12 @@ defmodule Derailed.Gateway do
         d: %{
           heartbeat_interval: 45_000
         },
-        s: nil
+        s: 0
       }
     )}, %{
       hb: false,
       ops: MapSet.new([0, 1, 2]),
-      s: nil,
+      s: 0,
       guilds: MapSet.new(),
       session: nil,
       id: nil,
@@ -102,7 +102,7 @@ defmodule Derailed.Gateway do
       {:reply, {:close, 4004, "Invalid Data"}, state}
     end
 
-    {:reply, {:text, encode(%{op: 3, s: nil, d: nil})}, %{state | hb: true, s: nil}}
+    {:reply, {:text, encode(%{op: 3, s: 0, d: nil})}, %{state | hb: true, s: 0}}
   end
 
   def handle_op({:identify, data}, state) do
@@ -138,7 +138,7 @@ defmodule Derailed.Gateway do
         nil -> MapSet.delete(guild_pids, pid)
         {:error, reason} -> {:error, reason}
         guild ->
-          Manifold.send(self(), {:send_guild, guild})
+          Manifold.send(self(), {:send_guild, guild, pid})
       end
 
       if is_nil(guild) do
@@ -149,7 +149,9 @@ defmodule Derailed.Gateway do
     {:ok, %{state | guilds: guild_pids}}
   end
 
-  def websocket_info({:send_guild, guild}, state) do
+  def websocket_info({:send_guild, guild, guild_pid}, state) do
+    Derailed.Guild.subscribe(guild_pid, state.session)
+
     s = state.s + 1
     {:reply, {:text, encode(%{op: 0, t: "GUILD_CREATE", s: s, d: guild})}, %{state | s: s}}
   end
@@ -183,9 +185,11 @@ defmodule Derailed.Gateway do
         case GenRegistry.lookup(Derailed.Guild, Map.get(Map.get(data, "d"), "guild_id")) do
           {:error, :not_found} -> {:reply, {:text, encode(data)}, %{state | s: s}}
           {:ok, pid} ->
-            Derailed.Guild.unsubscribe(pid, state.id)
+            Derailed.Guild.unsubscribe(pid, state.session)
             {:reply, {:text, encode(data)}, %{state | s: s, guilds: MapSet.delete(state.guilds, pid)}}
         end
+        _ ->
+          {:reply, {:text, encode(data)}, state}
     end
 
     {:reply, {:text, encode(data)}, %{state | s: s}}
@@ -197,15 +201,15 @@ defmodule Derailed.Gateway do
     end
 
     for pid <- state.guilds do
-      Derailed.Guild.unsubscribe(pid, state.id)
+      Derailed.Guild.unsubscribe(pid, state.session)
     end
 
     case GenRegistry.lookup(Derailed.Session.Registry, state.uid) do
       {:error, _reason} -> :ok
       {:ok, reg_pid} ->
-        Derailed.Session.Registry.remove_session(reg_pid, state.id)
+        Derailed.Session.Registry.remove_session(reg_pid, state.session)
 
-        GenServer.stop(state.id, :shutdown)
+        GenServer.stop(state.session, :shutdown)
         :ok
     end
   end

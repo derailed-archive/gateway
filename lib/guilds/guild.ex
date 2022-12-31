@@ -70,8 +70,9 @@ defmodule Derailed.Guild do
     Logger.debug("Unsubscribing #{inspect session_pid} from #{state.id}")
     new_map = MapSet.delete(state.sessions, session_pid)
 
-    if new_map == MapSet.new() do
-      {:stop, :no_sessions, state}
+    if Enum.empty?(new_map) do
+      Logger.debug "Stopping Guild #{state.id}"
+      GenRegistry.stop(Derailed.Guild, state.id)
     end
 
     {:noreply, %{state | sessions: new_map}}
