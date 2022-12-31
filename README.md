@@ -7,15 +7,9 @@ Derailed's Gateway powered by Elixir.
 The Gateway are the services which power
 Derailed's real-time infrastructure.
 
-It's done quite simple.
+It's done quite simple, something like:
 
-For Guilds it's like:
-
-API -> gRPC -> Get Guild PID -> Publish if available
-
-And for Users it's like:
-
-API -> gRPC -> Get Session Registry -> Publish to all Sessions, if any
+![gw diagram](./media/gateway.diagram.svg)
 
 ## Why Elixir?
 
