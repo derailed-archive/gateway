@@ -155,6 +155,7 @@ defmodule Derailed.Gateway do
 
   def websocket_info({:send_guild, guild, guild_pid}, state) do
     Derailed.Guild.subscribe(guild_pid, state.session)
+    Map.put(guild, "available", true)
 
     s = state.s + 1
     {:reply, {:text, encode(%{op: 0, t: "GUILD_CREATE", s: s, d: guild})}, %{state | s: s}}
