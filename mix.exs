@@ -32,6 +32,7 @@ defmodule Derailed.MixProject do
       {:grpc, "~> 0.5.0"},
       {:protobuf, "~> 0.11.0"},
       {:hammer, "~> 6.1"},
+      {:cowboy, "~> 2.9"},
       {:patch, "~> 0.12.0", only: [:test]},
     ]
   end

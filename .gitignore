@@ -27,3 +27,4 @@ derailed-*.tar
 
 .elixir_ls
 .env
+testing

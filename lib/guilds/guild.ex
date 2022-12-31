@@ -33,6 +33,11 @@ defmodule Derailed.Guild do
     GenServer.call(pid, :get_presence_count)
   end
 
+  @spec get_id(pid()) :: String.t
+  def get_id(pid) do
+    GenServer.call(pid, :get_id)
+  end
+
   # server
   def init(guild_id) do
     {:ok, %{
@@ -50,6 +55,10 @@ defmodule Derailed.Guild do
     Logger.debug "Getting Presence count for Guild #{state.id}"
     presence_count = Enum.count_until(state.sessions, 1000)
     {:reply, presence_count, state}
+  end
+
+  def handle_call(:get_id, _from, state) do
+    {:reply, state.id, state}
   end
 
   def handle_cast({:subscribe, session_pid}, state) do

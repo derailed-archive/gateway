@@ -19,6 +19,7 @@ defmodule Derailed.Supervisor do
         Derailed.Guild.Supervisor,
         Derailed.Session.Supervisor,
         Derailed.Crossway.Supervisor,
+        Derailed.Gateway.Supervisor,
         {Mongo, name: :mongo, database: "derailed", pool_size: 2, url: Dotenvy.env!("MONGODB_URI", :string!)}
       ],
         opts
