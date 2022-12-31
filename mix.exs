@@ -15,7 +15,7 @@ defmodule Derailed.MixProject do
   def application do
     [
       mod: {Derailed, []},
-      extra_applications: [:logger, :crypto]
+      extra_applications: [:logger]
     ]
   end
 
@@ -24,10 +24,16 @@ defmodule Derailed.MixProject do
     [
       {:fastglobal, "~> 1.0"},
       {:manifold, "~> 1.5.1"},
-      {:mongodb, "~> 1.0.0-beta.1"},
+      {:mongodb_driver, "~> 1.0.0"},
       {:dotenvy, "~> 0.7.0"},
       {:joken, "~> 2.5"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:gen_registry, "~> 1.3.0"},
+      {:grpc, "~> 0.5.0"},
+      {:protobuf, "~> 0.11.0"},
+      {:hammer, "~> 6.1"},
+      {:cowboy, "~> 2.9"},
+      {:patch, "~> 0.12.0", only: [:test]},
     ]
   end
 end

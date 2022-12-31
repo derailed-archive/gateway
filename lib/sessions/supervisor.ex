@@ -1,4 +1,4 @@
-defmodule Derailed.Sessions.Supervisor do
+defmodule Derailed.Session.Supervisor do
   use Supervisor
   require Logger
 
@@ -10,19 +10,8 @@ defmodule Derailed.Sessions.Supervisor do
   @impl true
   def init(:ok) do
     Logger.info("Initiating Supervision of Sessions")
-    opts = [strategy: :one_for_one, name: Derailed.Sessions]
+    opts = [strategy: :one_for_one, name: Derailed.Session.Registry]
 
-    Dotenvy.source([".env", System.get_env()])
-
-    Supervisor.init(
-      [
-        Derailed.Session.Registry,
-        %{
-          id: Mongo,
-          start: {Mongo, :start_link, [[name: :mongo, url: Dotenvy.env!("MONGO_URI"), database: "derailed", pool_size: 3]]}
-         },
-        ],
-        opts
-    )
+    Supervisor.init([{GenRegistry, worker_module: Derailed.Session.Registry}], opts)
   end
 end

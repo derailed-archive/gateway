@@ -2,64 +2,48 @@ defmodule Derailed.Session.Registry do
   use GenServer
   require Logger
 
-  def start_link(opts) do
-    Logger.info "Starting up Session Registry"
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(user_id) do
+    Logger.debug "Spinning up new Session Registry for User #{user_id}"
+    GenServer.start_link(__MODULE__, user_id)
   end
 
-  # API for clients
-  @spec get_sessions(String.t) :: MapSet.t
-  def get_sessions(user_id) do
-    GenServer.call(__MODULE__, {:get_sessions, user_id})
+  def init(user_id) do
+    {:ok, %{
+      id: user_id,
+      sessions: MapSet.new()
+    }}
   end
 
-  @spec new_session(pid, String.t) :: MapSet.t
-  def new_session(ws_pid, user_id) do
-    GenServer.call(__MODULE__, {:new_session, ws_pid, user_id})
+  @spec add_session(pid(), pid()) :: :ok
+  def add_session(pid, session_pid) do
+    GenServer.cast(pid, {:add_session, session_pid})
   end
 
-  @spec delete_session(String.t, String.t) :: nil
-  def delete_session(user_id, session_id) do
-    GenServer.call(__MODULE__, {:delete_session, user_id, session_id})
+  @spec remove_session(pid(), pid()) :: :ok
+  def remove_session(pid, session_pid) do
+    GenServer.cast(pid, {:remove_session, session_pid})
   end
 
-  # internal
-  def handle_call({:get_sessions, user_id}, _from, state) do
-    if Map.has_key?(state, user_id) == true do
-      {:reply, Map.get(state, user_id), nil}
-    else
-      {:reply, Map.put(state, user_id, MapSet.new()), nil}
-    end
+  @spec get_sessions(pid()) :: list
+  def get_sessions(pid) do
+    GenServer.call(pid, :get_sessions)
   end
 
-  def handle_call({:new_session, ws_pid, user_id}, _from, state) do
-    {:ok, pid} = Derailed.Session.start(ws_pid, user_id)
-    sessions = Derailed.Session.Registry.get_sessions(user_id)
-    MapSet.put(sessions, pid)
-    Map.replace!(state, user_id, sessions)
-    {:reply, pid, state}
+  def handle_call(:get_sessions, _from, state) do
+    {:reply, state.sessions, state}
   end
 
-  def handle_call({:delete_session, user_id, session_pid}, _from, state) do
-    sessions = Derailed.Session.Registry.get_sessions(user_id)
+  def handle_cast({:add_session, pid}, state) do
+    {:noreply, %{state | sessions: MapSet.put(state.sessions, pid)}}
+  end
 
-    for session <- sessions do
-      if session == session_pid do
-        MapSet.delete(sessions, session)
-      end
+  def handle_cast({:remove_session, pid}, state) do
+    new_map = MapSet.put(state.sessions, pid)
+
+    if new_map == MapSet.new() do
+      {:stop, :no_more_sessions, state}
     end
 
-    if MapSet.equal?(sessions, MapSet.new()) == false do
-      Map.replace!(state, user_id, sessions)
-    else
-      Map.delete(state, user_id)
-    end
-
-    {:noreply, user_id, state}
+    {:noreply, %{state | sessions: new_map}}
   end
-
-  def init(_opts) do
-    {:ok, %{}}
-  end
-
 end

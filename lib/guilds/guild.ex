@@ -1,55 +1,85 @@
 defmodule Derailed.Guild do
-  @moduledoc """
-  Processes for Guilds
-  """
   use GenServer
-
-  # called only by the registry
-  def start(guild_id) do
-    GenServer.start(__MODULE__, guild_id)
-  end
+  require Logger
 
   # client
-  @spec subscribe(pid(), String.t) :: :ok
-  def subscribe(pid, uid) do
-    GenServer.cast(pid, {:subscribe, uid})
+  def start_link(guild_id) do
+    Logger.debug "Spinning up new Guild"
+    GenServer.start_link(__MODULE__, guild_id)
   end
 
-  @spec unsubscribe(pid(), String.t) :: :ok
-  def unsubscribe(pid, uid) do
-    GenServer.cast(pid, {:unsubscribe, uid})
+  @spec subscribe(pid(), pid()) :: :ok
+  def subscribe(pid, session_pid) do
+    GenServer.cast(pid, {:subscribe, session_pid})
   end
 
-  @spec publish(pid(), map()) :: :ok
+  @spec unsubscribe(pid(), pid()) :: :ok
+  def unsubscribe(pid, session_pid) do
+    GenServer.cast(pid, {:unsubscribe, session_pid})
+  end
+
+  @spec publish(pid(), Map) :: :ok
   def publish(pid, message) do
     GenServer.cast(pid, {:publish, message})
   end
 
-  # server/backend
+  @spec exists(pid(), pid()) :: boolean
+  def exists(pid, session_pid) do
+    GenServer.call(pid, {:exists, pid, session_pid})
+  end
+
+  @spec get_presence_count(pid()) :: integer
+  def get_presence_count(pid) do
+    GenServer.call(pid, :get_presence_count)
+  end
+
+  @spec get_id(pid()) :: String.t
+  def get_id(pid) do
+    GenServer.call(pid, :get_id)
+  end
+
+  # server
   def init(guild_id) do
     {:ok, %{
       id: guild_id,
-      subscribed: MapSet.new()
+      sessions: MapSet.new()
     }}
   end
 
-  ## calls/casts
-  def handle_cast({:subscribe, user_id}, _from, state) do
-    subscriptions = state.subscribed
-    {:noreply, %{
-      state | subscribed: MapSet.put(subscriptions, user_id)
-    }}
+  def handle_call({:exists, pid, session_pid}, _from, state) do
+    Logger.debug "Checking if session id #{inspect pid} exists"
+    {:reply, MapSet.member?(state.sessions, session_pid), state}
   end
 
-  def handle_cast({:unsubscribe, user_id}, _from, state) do
-    subscriptions = state.subscribed
-    {:noreply, %{
-      state | subscribed: MapSet.delete(subscriptions, user_id)
-    }}
+  def handle_call(:get_presence_count, _from, state) do
+    Logger.debug "Getting Presence count for Guild #{state.id}"
+    presence_count = Enum.count_until(state.sessions, 1000)
+    {:reply, presence_count, state}
   end
 
-  def handle_cast({:publish, message}, _from, %{subscribed: subscribed}=state) do
-    Enum.each(subscribed, &Manifold.send(&1.pid, message))
-    {:reply, :ok, state}
+  def handle_call(:get_id, _from, state) do
+    {:reply, state.id, state}
+  end
+
+  def handle_cast({:subscribe, session_pid}, state) do
+    Logger.debug("Subscribing #{inspect session_pid} to #{state.id}")
+    {:noreply, %{state | sessions: MapSet.put(state.sessions, session_pid)}}
+  end
+
+  def handle_cast({:unsubscribe, session_pid}, state) do
+    Logger.debug("Unsubscribing #{inspect session_pid} from #{state.id}")
+    new_map = MapSet.delete(state.sessions, session_pid)
+
+    if new_map == MapSet.new() do
+      {:stop, :no_sessions, state}
+    end
+
+    {:noreply, %{state | sessions: new_map}}
+  end
+
+  def handle_cast({:publish, message}, state) do
+    Logger.debug "Publishing message to #{state.id}: #{inspect message}"
+    Enum.each(state.sessions, &Manifold.send(&1, message))
+    {:noreply, state}
   end
 end
