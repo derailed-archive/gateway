@@ -114,11 +114,15 @@ defmodule Derailed.Gateway do
     case Derailed.Ready.handle_ready(token, self()) do
       {:error, _reason} -> {:reply, {:close, 4004, "Invalid Authorization"}, state}
       {:ok, user, guild_pids, session_pid, session_id, guild_ids} ->
+        user = Map.new(user)
+        settings = Mongo.find_one(:mongo, "settings", %{_id: Map.get(user, "_id")})
+
         Manifold.send(self(), :send_guilds)
         {:reply, {:text, encode(%{
           op: 4,
           d: %{
-            user: Map.new(user),
+            user: user,
+            settings: settings,
             unavailable_guilds: guild_ids,
             session_id: session_id
           }
