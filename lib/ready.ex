@@ -1,6 +1,11 @@
 defmodule Derailed.Ready do
   require Logger
 
+  def get_trace() do
+    hash = :crypto.hash(:ripemd160, inspect(self()))
+    hash |> Base.encode32(case: :lower)
+  end
+
   def generate_session_id() do
     # TODO: add a way for session ids not to collide, or
     # transfer session ids to pure snowflakes instead
@@ -41,7 +46,7 @@ defmodule Derailed.Ready do
           gpid
         end))
 
-        {:ok, user, guild_pids, session_pid, session_id, guild_ids}
+        {:ok, user, guild_pids, session_pid, session_id, guild_ids, get_trace()}
     end
   end
 end

@@ -8,6 +8,11 @@ defmodule Derailed.Gateway do
     {:cowboy_websocket, req, state}
   end
 
+  def get_trace() do
+    hash = :crypto.hash(:ripemd160, inspect(self()))
+    hash |> Base.encode32(case: :lower)
+  end
+
   @spec hb_timer(integer()) :: reference()
   def hb_timer(interval) do
     :erlang.send_after(interval + 1000, self(), :look_heartbeat)
@@ -24,10 +29,7 @@ defmodule Derailed.Gateway do
   @spec get_name(integer()) :: atom()
   def get_name(op) do
     %{0 => :heartbeat,
-      1 => :identify,
-      2 => :hello,
-      3 => :ack,
-      4 => :ready}[op]
+      1 => :identify,}[op]
   end
 
   def payloaded(op, data) do
@@ -45,11 +47,12 @@ defmodule Derailed.Gateway do
 
     {:reply, {:text, encode(
       %{
-        op: 2,
+        _trace: get_trace(),
         d: %{
           heartbeat_interval: 45_000
         },
-        s: 0
+        s: 0,
+        op: 2,
       }
     )}, %{
       hb: false,
@@ -102,7 +105,7 @@ defmodule Derailed.Gateway do
       {:reply, {:close, 4004, "Invalid Data"}, state}
     end
 
-    {:reply, {:text, encode(%{op: 3, s: 0, d: nil})}, %{state | hb: true, s: 0}}
+    {:reply, {:text, encode(%{s: 0, d: nil, op: 3})}, %{state | hb: true, s: 0}}
   end
 
   def handle_op({:identify, data}, state) do
@@ -113,7 +116,7 @@ defmodule Derailed.Gateway do
 
     case Derailed.Ready.handle_ready(token, self()) do
       {:error, _reason} -> {:reply, {:close, 4004, "Invalid Authorization"}, state}
-      {:ok, user, guild_pids, session_pid, session_id, guild_ids} ->
+      {:ok, user, guild_pids, session_pid, session_id, guild_ids, trace} ->
         user = Map.new(user)
         settings = Mongo.find_one(:mongo, "settings", %{_id: Map.get(user, "_id")})
 
@@ -121,10 +124,11 @@ defmodule Derailed.Gateway do
         {:reply, {:text, encode(%{
           op: 4,
           d: %{
+            _trace: trace,
+            session_id: session_id,
+            unavailable_guilds: guild_ids,
             user: user,
             settings: settings,
-            unavailable_guilds: guild_ids,
-            session_id: session_id
           }
         })}, %{state | guilds: guild_pids, session: session_pid, id: session_id, uid: Map.get(user, "_id")}}
     end
@@ -158,7 +162,7 @@ defmodule Derailed.Gateway do
     Map.put(guild, "available", true)
 
     s = state.s + 1
-    {:reply, {:text, encode(%{op: 0, t: "GUILD_CREATE", s: s, d: guild})}, %{state | s: s}}
+    {:reply, {:text, encode(%{d: guild, s: s, t: "GUILD_CREATE", op: 0})}, %{state | s: s}}
   end
 
   def websocket_info(:look_heartbeat, state) do

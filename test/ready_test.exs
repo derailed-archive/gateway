@@ -21,7 +21,7 @@ defmodule Derailed.Ready.Test do
   end
 
   test "valid ready" do
-    {:ok, user, guild_pids, _session_pid, _session_id, _guild_ids} = Derailed.Ready.handle_ready("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInVzZXJfaWQiOiIyMTQxMjQyMzQyNDcifQ.eyJ0aW1lIjoxNjcyMzcxMzA3LjMyOTI4MDF9.wC0X62iQDTsGeOphhaW2AlfWxYK2HuTpMbbmAT9GMFA", self())
+    {:ok, user, guild_pids, _session_pid, _session_id, _guild_ids, _trace} = Derailed.Ready.handle_ready("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInVzZXJfaWQiOiIyMTQxMjQyMzQyNDcifQ.eyJ0aW1lIjoxNjcyMzcxMzA3LjMyOTI4MDF9.wC0X62iQDTsGeOphhaW2AlfWxYK2HuTpMbbmAT9GMFA", self())
     assert user != nil
     assert guild_pids == MapSet.new()
     GenRegistry.stop(Derailed.Session.Registry, Map.get(user, "id"))
