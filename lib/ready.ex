@@ -43,6 +43,7 @@ defmodule Derailed.Ready do
         guild_pids = MapSet.new(Enum.map(members, fn member ->
           guild_id = Map.get(member, "guild_id")
           {:ok, gpid} = GenRegistry.lookup_or_start(Derailed.Guild, guild_id, [guild_id])
+          Derailed.Guild.publish_presence(gpid, user_id)
           gpid
         end))
 

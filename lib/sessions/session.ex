@@ -15,6 +15,15 @@ defmodule Derailed.Session do
     }}
   end
 
+  @spec get_id(pid()) :: String.t
+  def get_id(pid) do
+    GenServer.call(pid, :get_id)
+  end
+
+  def handle_call(:get_id, _from, state) do
+    state.id
+  end
+
   def handle_info(msg, state) do
     Logger.debug "Handing off message to #{state.id}: #{inspect msg}"
     Manifold.send(state.ws_pid, Map.new(msg))

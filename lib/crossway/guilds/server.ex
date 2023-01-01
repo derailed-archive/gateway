@@ -9,7 +9,7 @@ defmodule Derailed.Crossway.Guild do
     case GenRegistry.lookup(Derailed.Guild, guild_id) do
       {:error, :not_found} -> Derailed.Crossway.Guild.Proto.Publr.new(message: "Success")
       {:ok, guild_pid} ->
-        Derailed.Guild.publish(guild_pid, %{t: request.message.event, d: message})
+        Derailed.Guild.publish(guild_pid, %{d: message, t: request.message.event})
         Derailed.Crossway.Guild.Proto.Publr.new(message: "Success")
     end
   end

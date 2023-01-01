@@ -67,22 +67,27 @@ defmodule Derailed.Gateway do
   end
 
   def websocket_handle({:text, content}, state) do
-    case Jason.decode(content) do
-      {:error, _reason} ->
-        {:reply, {:close, 4000, "Bad Packet Sent"}, state}
-      {:ok, data} ->
-        case Map.get(data, "op") do
-          nil ->
-            {:reply, {:close, 4000, "Bad Message Sent"}, state}
-          op ->
-            if not MapSet.member?(state.ops, op) do
-              {:reply, {:close, 4001, "Bad OP code"}, state}
-            end
-            case Map.get(data, "d", Map) do
-              Map -> {:reply, {:close, 4003, "Invalid Data"}, state}
-              d -> handle_op({get_name(op), d}, state)
+    case Hammer.check_rate(state.id, 60_000, 50) do
+      {:allow, _count} ->
+        case Jason.decode(content) do
+          {:error, _reason} ->
+            {:reply, {:close, 4000, "Bad packet"}, state}
+          {:ok, data} ->
+            case Map.get(data, "op") do
+              nil ->
+                {:reply, {:close, 4000, "Bad message"}, state}
+              op ->
+                if not MapSet.member?(state.ops, op) do
+                  {:reply, {:close, 4001, "Bad OP code"}, state}
+                end
+                case Map.get(data, "d", Map) do
+                  Map -> {:reply, {:close, 4003, "Invalid data"}, state}
+                  d -> handle_op({get_name(op), d}, state)
+                end
             end
         end
+      {:deny, _limit} ->
+        {:reply, {:close, 4007, "Rate limit passed"}, state}
     end
   end
 
@@ -105,7 +110,7 @@ defmodule Derailed.Gateway do
       {:reply, {:close, 4004, "Invalid Data"}, state}
     end
 
-    {:reply, {:text, encode(%{s: 0, d: nil, op: 3})}, %{state | hb: true, s: 0}}
+    {:reply, {:text, encode(%{s: 0, op: 3, d: nil})}, %{state | hb: true, s: 0}}
   end
 
   def handle_op({:identify, data}, state) do
@@ -122,14 +127,14 @@ defmodule Derailed.Gateway do
 
         Manifold.send(self(), :send_guilds)
         {:reply, {:text, encode(%{
-          op: 4,
           d: %{
-            _trace: trace,
             session_id: session_id,
             unavailable_guilds: guild_ids,
             user: user,
             settings: settings,
-          }
+          },
+          op: 4,
+          _trace: trace,
         })}, %{state | guilds: guild_pids, session: session_pid, id: session_id, uid: Map.get(user, "_id")}}
     end
   end
@@ -175,6 +180,7 @@ defmodule Derailed.Gateway do
   end
 
   def websocket_info(data, state) do
+    data = Map.new(data)
     t = Map.get(data, "t")
     s = state.s + 1
     data = Map.put(data, "op", 0)
@@ -200,8 +206,6 @@ defmodule Derailed.Gateway do
         _ ->
           {:reply, {:text, encode(data)}, state}
     end
-
-    {:reply, {:text, encode(data)}, %{state | s: s}}
   end
 
   def terminate(_reason, _req, state) do
@@ -209,13 +213,24 @@ defmodule Derailed.Gateway do
       :ok
     end
 
-    for pid <- state.guilds do
-      Derailed.Guild.unsubscribe(pid, state.session)
-    end
-
     case GenRegistry.lookup(Derailed.Session.Registry, state.uid) do
       {:error, _reason} -> :ok
       {:ok, reg_pid} ->
+        for pid <- state.guilds do
+          Derailed.Guild.unsubscribe(pid, state.session)
+          if Derailed.Session.Registry.offlineable(reg_pid, state.session) == true do
+            try do
+              Derailed.Guild.offline(pid, state.uid)
+            rescue
+              _ in FunctionClauseError ->
+                  Derailed.Session.Registry.remove_session(reg_pid, state.session)
+
+                  GenServer.stop(state.session, :shutdown)
+                  :ok
+            end
+          end
+        end
+
         Derailed.Session.Registry.remove_session(reg_pid, state.session)
 
         GenServer.stop(state.session, :shutdown)

@@ -29,8 +29,17 @@ defmodule Derailed.Session.Registry do
     GenServer.call(pid, :get_sessions)
   end
 
+  @spec offlineable(pid(), pid()) :: boolean
+  def offlineable(pid, session_pid) do
+    GenServer.call(pid, {:offlineable, session_pid})
+  end
+
   def handle_call(:get_sessions, _from, state) do
     {:reply, state.sessions, state}
+  end
+
+  def handle_call({:offlineable, session_pid}, _from, state) do
+    {:reply, Enum.empty?(MapSet.delete(state.sessions, session_pid)), state}
   end
 
   def handle_cast({:add_session, pid}, state) do
