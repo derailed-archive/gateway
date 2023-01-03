@@ -15,9 +15,14 @@ jobs:
   action:
     runs-on: ubuntu-latest
     steps:
+      - uses: wow-actions/use-app-token@v2
+        id: generate_token
+        with:
+          app_id: ${{ secrets.CASS_ID }}
+          private_key: ${{ secrets.CASS_TOKEN }}
       - uses: dessant/lock-threads@v4
         with:
-          github-token: ${{ secrets.CASS_TOKEN }}
+          github-token: ${{ steps.generate_token.outputs.BOT_TOKEN }}
           issue-inactive-days: '182'
           add-issue-labels: 'S: Stale'
           issue-comment: 'Closing Issue due to Inactivity. If you still have issues pwease open up another issue~!'
