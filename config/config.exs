@@ -9,3 +9,5 @@ config :grpc, start_server: true
 if Mix.env() == :prod do
   config :logger, level: :info
 end
+
+config :tesla, adapter: Tesla.Adapter.Hackney
