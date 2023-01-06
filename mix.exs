@@ -35,6 +35,7 @@ defmodule Derailed.MixProject do
       {:cowboy, "~> 2.9"},
       {:tesla, "~> 1.5"},
       {:hackney, "~> 1.17"},
+      {:jsonrs, "~> 0.2.1"},
       {:patch, "~> 0.12.0", only: [:test]},
     ]
   end

@@ -3,13 +3,15 @@ defmodule Derailed.Crossway.User do
 
   @spec publish(Derailed.Crossway.User.Proto.UPubl.t, GRPC.Server.Stream.t) :: Derailed.Crossway.User.Proto.UPublr.t
   def publish(request, _stream) do
-    case GenRegistry.lookup(Derailed.Session.Registry, request.user_id) do
+    user_id = request.user_id
+    case GenRegistry.lookup(Derailed.Session.Registry, user_id) do
       {:error, :not_found} -> Derailed.Crossway.User.Proto.UPublr.new(message: "Success")
       {:ok, pid} ->
-        {:ok, message} = Jason.decode(request.message.data)
-        for session_pid <- Derailed.Session.Registry.get_sessions(pid) do
-          Manifold.send(session_pid, %{t: request.message.event, d: message})
-        end
+        {:ok, message} = Jsonrs.decode(request.message.data)
+        Enum.each(Derailed.Session.Registry.get_sessions(pid), fn session_pid ->
+          Manifold.send(session_pid, %{"d" => message, "t" => request.message.event})
+        end)
+        Derailed.Crossway.User.Proto.UPublr.new(message: "Success")
     end
   end
 end

@@ -4,12 +4,12 @@ defmodule Derailed.Crossway.Guild do
   @spec publish(Derailed.Crossway.Guild.Proto.Publ.t, GRPC.Server.Stream.t) :: Derailed.Crossway.Guild.Proto.Publr.t
   def publish(request, _stream) do
     guild_id = request.guild_id
-    {:ok, message} = Jason.decode(request.message.data)
+    {:ok, message} = Jsonrs.decode(request.message.data)
 
     case GenRegistry.lookup(Derailed.Guild, guild_id) do
       {:error, :not_found} -> Derailed.Crossway.Guild.Proto.Publr.new(message: "Success")
       {:ok, guild_pid} ->
-        Derailed.Guild.publish(guild_pid, %{d: message, t: request.message.event})
+        Derailed.Guild.publish(guild_pid, %{"d" => message, "t" => request.message.event})
         Derailed.Crossway.Guild.Proto.Publr.new(message: "Success")
     end
   end

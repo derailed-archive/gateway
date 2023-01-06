@@ -13,6 +13,24 @@ defmodule Derailed.Gateway do
     hash |> Base.encode32(case: :lower)
   end
 
+  def form_message(op, type, data, state) do
+    {:ok, encoded} = Jsonrs.encode(%{"op" => op, "t" => type, "s" => state.s + 1, "d" => data})
+    {:text, encoded}
+  end
+
+  def form_message(op, data, state) do
+    trace = get_trace()
+    {:ok, encoded} = Jsonrs.encode(%{"op" => op, "s" => state.s + 1, "d" => data, "_trace" => trace})
+    {:text, encoded}
+  end
+
+  @spec form_message(any, any) :: {:text, binary}
+  def form_message(op, data) do
+    trace = get_trace()
+    {:ok, encoded} = Jsonrs.encode(%{"op" => op, "s" => 0, "d" => data, "_trace" => trace})
+    {:text, encoded}
+  end
+
   @spec hb_timer(integer()) :: reference()
   def hb_timer(interval) do
     :erlang.send_after(interval + 1000, self(), :look_heartbeat)
@@ -36,25 +54,15 @@ defmodule Derailed.Gateway do
     %{op: op, d: data}
   end
 
-  def encode(data) do
-    e = Map.new(data)
-    {:ok, d} = Jason.encode(e)
-    d
+  def random_hb_time() do
+    Enum.random(42_000..48_000)
   end
 
   def websocket_init(_req) do
-    hb_timer(45_000)
+    hb_time = random_hb_time()
+    hb_timer(hb_time)
 
-    {:reply, {:text, encode(
-      %{
-        _trace: get_trace(),
-        d: %{
-          heartbeat_interval: 45_000
-        },
-        s: 0,
-        op: 2,
-      }
-    )}, %{
+    {:reply, form_message(2, %{"heartbeat_interval" => hb_time}), %{
       hb: false,
       ops: MapSet.new([0, 1, 2]),
       s: 0,
@@ -63,13 +71,14 @@ defmodule Derailed.Gateway do
       id: nil,
       uid: nil,
       ready: false,
+      hb_time: hb_time
     }}
   end
 
   def websocket_handle({:text, content}, state) do
     case Hammer.check_rate(state.id, 60_000, 50) do
       {:allow, _count} ->
-        case Jason.decode(content) do
+        case Jsonrs.decode(content, [lean: true]) do
           {:error, _reason} ->
             {:reply, {:close, 4000, "Bad packet"}, state}
           {:ok, data} ->
@@ -110,7 +119,7 @@ defmodule Derailed.Gateway do
       {:reply, {:close, 4004, "Invalid Data"}, state}
     end
 
-    {:reply, {:text, encode(%{s: 0, op: 3, d: nil})}, %{state | hb: true, s: 0}}
+    {:reply, form_message(3, 0), %{state | hb: true, s: 0}}
   end
 
   def handle_op({:identify, data}, state) do
@@ -121,21 +130,17 @@ defmodule Derailed.Gateway do
 
     case Derailed.Ready.handle_ready(token, self()) do
       {:error, _reason} -> {:reply, {:close, 4004, "Invalid Authorization"}, state}
-      {:ok, user, guild_pids, session_pid, session_id, guild_ids, trace} ->
+      {:ok, user, guild_pids, session_pid, session_id, guild_ids, _trace} ->
         user = Map.new(user)
         settings = Mongo.find_one(:mongo, "settings", %{_id: Map.get(user, "_id")})
 
         Manifold.send(self(), :send_guilds)
-        {:reply, {:text, encode(%{
-          d: %{
-            session_id: session_id,
-            unavailable_guilds: guild_ids,
-            user: user,
-            settings: settings,
-          },
-          op: 4,
-          _trace: trace,
-        })}, %{state | guilds: guild_pids, session: session_pid, id: session_id, uid: Map.get(user, "_id")}}
+        {:reply, form_message(4, %{
+            "session_id" => session_id,
+            "unavailable_guilds" => guild_ids,
+            "user" => user,
+            "settings" => settings,
+        }, state), %{state | guilds: guild_pids, session: session_pid, id: session_id, uid: Map.get(user, "_id"), s: state.s + 1}}
     end
   end
 
@@ -167,7 +172,7 @@ defmodule Derailed.Gateway do
     Map.put(guild, "available", true)
 
     s = state.s + 1
-    {:reply, {:text, encode(%{d: guild, s: s, t: "GUILD_CREATE", op: 0})}, %{state | s: s}}
+    {:reply, form_message(0, "GUILD_CREATE", guild, state), %{state | s: s}}
   end
 
   def websocket_info(:look_heartbeat, state) do
@@ -175,36 +180,36 @@ defmodule Derailed.Gateway do
       {:reply, {:close, 4006, "Heartbeat time passed"}, state}
     end
 
-    hb_timer(45_000)
+    hb_timer(state.hb_time)
     {:ok, %{state | hb: false}}
   end
 
   def websocket_info(data, state) do
-    data = Map.new(data)
     t = Map.get(data, "t")
+    d = Map.get(data, "d")
     s = state.s + 1
     data = Map.put(data, "op", 0)
     data = Map.put(data, "s", s)
-
-    if is_nil(t) do
-      {:ok, state}
-    end
 
     case t do
       "GUILD_CREATE" ->
         guild_id = Map.get(Map.get(data, "d"), "_id")
         {:ok, pid} = GenRegistry.lookup_or_start(Derailed.Guild, guild_id, [guild_id])
-        {:reply, {:text, encode(data)}, %{state | s: s, guilds: MapSet.put(state.guilds, pid)}}
+        Manifold.send(self(), {:send_guild, d, pid})
+        Derailed.Guild.publish_presence(pid, state.uid)
+        {:ok, state}
       "USER_DELETE" -> {:reply, {:close, 4005, "User Deleted"}, state}
       "GUILD_DELETE" ->
         case GenRegistry.lookup(Derailed.Guild, Map.get(Map.get(data, "d"), "guild_id")) do
-          {:error, :not_found} -> {:reply, {:text, encode(data)}, %{state | s: s}}
+          {:error, :not_found} -> {:reply, form_message(0, t, d, state), %{state | s: s}}
           {:ok, pid} ->
             Derailed.Guild.unsubscribe(pid, state.session)
-            {:reply, {:text, encode(data)}, %{state | s: s, guilds: MapSet.delete(state.guilds, pid)}}
+            {:reply, form_message(0, t, d, state), %{state | s: s, guilds: MapSet.delete(state.guilds, pid)}}
         end
-        _ ->
-          {:reply, {:text, encode(data)}, state}
+      nil ->
+        {:ok, state}
+      _ ->
+          {:reply, form_message(0, t, d, state), %{state | s: s}}
     end
   end
 

@@ -194,8 +194,8 @@ defmodule Derailed.Guild do
       # user is not connected to guild
       if p == nil do
         presence = Map.new(Mongo.find_one(:mongo, "presences", %{_id: user_id}))
-        presence = Map.delete(p, "_id")
-        presence = Map.delete(p, "guild_id")
+        presence = Map.delete(presence, "_id")
+        presence = Map.delete(presence, "guild_id")
 
         member = Map.put(member, "presence", presence)
         member

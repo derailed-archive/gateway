@@ -10,7 +10,7 @@ defmodule Derailed.Auth do
       doc ->
         user = Map.new(doc)
         {:ok, resp} = Derailed.Rustacean.Auth.validate(user_id, token, Map.get(user, "password"))
-        m = Map.new(resp)
+        m = Map.new(resp.body)
         is_valid = Map.get(m, "is_valid")
 
         case is_valid do
