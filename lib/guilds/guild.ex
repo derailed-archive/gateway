@@ -114,42 +114,39 @@ defmodule Derailed.Guild do
 
     presence = Mongo.find_one(:mongo, "presences", %{_id: user_id})
 
-    if presence == nil do
-      settings = Map.new(Mongo.find_one(:mongo, "settings", %{_id: user_id}))
-      status = Map.get(settings, "status")
+    case presence do
+      {:error, _reason} -> {:noreply, state}
+      nil ->
+        settings = Map.new(Mongo.find_one(:mongo, "settings", %{_id: user_id}))
+        status = Map.get(settings, "status")
 
-      if status != "invisible" do
-        presence = Map.new()
-        presence = Map.put(presence, "_id", user_id)
-        presence = Map.put(presence, "device", "web")
-        presence = Map.put(presence, "activities", [])
-        presence = Map.put(presence, "status", status)
-        Mongo.insert_one!(:mongo, "presences", presence)
-        presence = Map.put(presence, "guild_id", state.id)
-        presence = Map.delete(presence, "_id")
-        presence = Map.put(presence, "user_id", user_id)
+        if status != "invisible" do
+          presence = Map.new()
+          presence = Map.put(presence, "_id", user_id)
+          presence = Map.put(presence, "device", "web")
+          presence = Map.put(presence, "activities", [])
+          presence = Map.put(presence, "status", status)
+          presence = Map.put(presence, "guild_id", state.id)
+          Mongo.insert_one!(:mongo, "presences", presence)
 
-        Derailed.Guild.publish(self(), %{t: "PRESENCE_UPDATE", d: presence})
+          Derailed.Guild.publish(self(), %{t: "PRESENCE_UPDATE", d: presence})
 
-        if Map.has_key?(state.presences, user_id) do
-          {:noreply, %{state | presences: Map.replace(state.presences, user_id, presence)}}
-        else
-          {:noreply, %{state | presences: Map.put(state.presences, user_id, presence)}}
+          if Map.has_key?(state.presences, user_id) do
+            {:noreply, %{state | presences: Map.replace(state.presences, user_id, presence)}}
+          else
+            {:noreply, %{state | presences: Map.put(state.presences, user_id, presence)}}
+          end
         end
-      end
-    else
-      presence = Map.new(presence)
-      presence = Map.put(presence, "guild_id", state.id)
-      presence = Map.delete(presence, "_id")
-      presence = Map.put(presence, "user_id", user_id)
+      obj ->
+          presence = Map.new(presence)
 
-      Derailed.Guild.publish(self(), %{d: presence, t: "PRESENCE_UPDATE",})
+          Derailed.Guild.publish(self(), %{d: presence, t: "PRESENCE_UPDATE",})
 
-      if Map.has_key?(state.presences, user_id) do
-        {:noreply, %{state | presences: Map.replace(state.presences, user_id, presence)}}
-      else
-        {:noreply, %{state | presences: Map.put(state.presences, user_id, presence)}}
-      end
+          if Map.has_key?(state.presences, user_id) do
+            {:noreply, %{state | presences: Map.replace(state.presences, user_id, presence)}}
+          else
+            {:noreply, %{state | presences: Map.put(state.presences, user_id, presence)}}
+          end
     end
   end
 
@@ -164,9 +161,6 @@ defmodule Derailed.Guild do
 
     presences = Map.delete(state.presences, user_id)
     presence = Map.replace(presence, "status", "invisible")
-    presence = Map.delete(presence, "guild_id")
-    presence = Map.delete(presence, "user_id")
-    presence = Map.put(presence, "_id", user_id)
 
     Mongo.update_one!(:mongo, "presences", %{_id: user_id}, presence)
 
