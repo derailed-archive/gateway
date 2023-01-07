@@ -62,9 +62,9 @@ defmodule Derailed.Guild do
   def init(guild_id) do
     {:ok, %{
       id: guild_id,
-      sessions: MapSet.new(),
-      presences: Map.new(),
-    }}
+        sessions: MapSet.new(),
+        presences: Map.new(),
+      }}
   end
 
   def handle_call({:exists, pid, session_pid}, _from, state) do
@@ -101,8 +101,8 @@ defmodule Derailed.Guild do
 
   def handle_cast({:publish, message}, state) do
     Logger.debug "Publishing message to #{state.id}: #{inspect message}"
+
     Enum.each(state.sessions, &Manifold.send(&1, message))
-    {:noreply, state}
   end
 
   def handle_cast({:publish_presence, user_id}, state) do
@@ -176,35 +176,29 @@ defmodule Derailed.Guild do
   def handle_cast({:get_guild_members, session_pid, offline}, state) do
     presences = state.presences
 
-    members = Enum.map(Enum.to_list(Mongo.find(:mongo, "members", %{guild_id: state.id})), fn member ->
-      # convert user_id to member
-      user_id = Map.get(member, "user_id")
-      member = Map.put(member, "user", Map.new(Mongo.find_one(:mongo, "users", %{_id: user_id})))
-      member = Map.delete(member, "user_id")
-      member = Map.delete(member, "_id")
-
-      p = Map.get(presences, user_id)
-
-      # user is not connected to guild
-      if p == nil do
-        presence = Map.new(Mongo.find_one(:mongo, "presences", %{_id: user_id}))
-        presence = Map.delete(presence, "_id")
-        presence = Map.delete(presence, "guild_id")
-
-        member = Map.put(member, "presence", presence)
-        member
-      end
-
-      p = Map.delete(p, "user_id")
-      p = Map.delete(p, "guild_id")
-
-      member = Map.put(member, "presence", p)
-      member
+    # TODO: this can be sped up by storing the guilds members prematurely
+    online_members = Enum.map(presences, fn user_id ->
+      member = Mongo.find_one(:mongo, "members", %{user_id: user_id, guild_id: state.id})
+      member = Map.new(member)
+      Map.delete(member, "_id")
     end)
 
+    if offline do
+      offline_members = Enum.map(Enum.to_list(Mongo.find(:mongo, "presences", %{guild_id: state.id, status: "invisible"})), fn presence ->
+        p = Map.new(presence)
+        member = Mongo.find_one(:mongo, "members", %{user_id: Map.get(p, "user_id"), guild_id: state.id})
+        member = Map.new(member)
+        Map.delete(member, "_id")
+      end)
 
-    Manifold.send(session_pid, %{d: %{guild_id: state.id, members: members}, t: "GUILD_MEMBER_CHUNK"})
+      members = Enum.concat(online_members, offline_members)
+      Manifold.send(session_pid, %{d: %{guild_id: state.id, members: members}, t: "GUILD_MEMBER_CHUNK"})
 
-    {:noreply, state}
+      {:noreply, state}
+    else
+      Manifold.send(session_pid, %{d: %{guild_id: state.id, members: online_members}, t: "GUILD_MEMBER_CHUNK"})
+
+      {:noreply, state}
+    end
   end
 end
