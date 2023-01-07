@@ -169,7 +169,10 @@ defmodule Derailed.Gateway do
 
   def websocket_info({:send_guild, guild, guild_pid}, state) do
     Derailed.Guild.subscribe(guild_pid, state.session)
-    Map.put(guild, "available", true)
+    guild = Map.put(guild, "available", true)
+
+    guild = Map.put(guild, "channels", Enum.to_list(Mongo.find(:mongo, "channels", %{guild_id: Map.get(guild, "_id")})))
+    guild = Map.put(guild, "roles", Enum.to_list(Mongo.find(:mongo, "roles", %{guild_id: Map.get(guild, "_id")})))
 
     s = state.s + 1
     {:reply, form_message(0, "GUILD_CREATE", guild, state), %{state | s: s}}
