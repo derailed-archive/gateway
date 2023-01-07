@@ -7,7 +7,10 @@ COPY . .
 RUN mix local.hex --force
 RUN mix local.rebar --force
 # release a production version
-RUN MIX_ENV=prod mix release
+ENV MIX_ENV=prod
+RUN mix deps.get
+RUN mix deps.compile
+RUN mix release
 
 # recopy to open new build files
 FROM elixir:latest
