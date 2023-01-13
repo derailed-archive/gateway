@@ -1,13 +1,18 @@
+# This file is responsible for configuring your umbrella
+# and **all applications** and their dependencies with the
+# help of the Config module.
+#
+# Note that all applications in your umbrella share the
+# same configuration and dependencies, which is why they
+# all use the same configuration file. If you want different
+# configurations or dependencies per app, it is best to
+# move said applications out of the umbrella.
 import Config
 
-config :hammer,
-  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000,
-                                 cleanup_interval_ms: 60_000 * 10]}
-
-config :grpc, start_server: true
-
-if Mix.env() == :prod do
-  config :logger, level: :info
-end
-
-config :tesla, adapter: Tesla.Adapter.Hackney
+# Sample configuration:
+#
+#     config :logger, :console,
+#       level: :info,
+#       format: "$date $time [$level] $metadata$message\n",
+#       metadata: [:user_id]
+#

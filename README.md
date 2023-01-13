@@ -2,20 +2,16 @@
 
 Derailed's Gateway powered by Elixir.
 
-## Main Detailing
+## How Does it work?
 
-The Gateway are the services which power
-Derailed's real-time infrastructure.
-
-It's done quite simple, something like:
-
-![gw diagram](./media/gateway.diagram.svg)
+The Gateway feeds off and is powered by a consistent hashing algorithm. In this way, the Gateway can
+locate and use the nodes for a Guild, or a User's Session.
 
 ## Why Elixir?
 
-We decided to pick elixir because:
+We decided to pick Elixir because:
 
-- As it's based on the OTP and the BEAM VM it allowes for levels of
+- As it's based on the OTP and the BEAM VM it allows for levels of
 scalability easier and promptly better than on platforms like Rust, JavaScript, or Python.
 - It's fast and easy to learn
 - Great Tools and Community
