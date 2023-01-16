@@ -26,7 +26,7 @@ defmodule Derailed.GRPC.MixProject do
   defp deps do
     [
       {:protobuf, "~> 0.11"},
-      {:grpc, "~> 0.5"},
+      {:grpc, "~> 0.5"}
     ]
   end
 end

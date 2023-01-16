@@ -8,36 +8,37 @@ defmodule Derailed.Guild do
   # GenServer API
 
   def start_link(guild_id) do
-    Logger.debug "Spinning up new Guild: #{inspect guild_id}"
+    Logger.debug("Spinning up new Guild: #{inspect(guild_id)}")
     GenServer.start_link(__MODULE__, guild_id)
   end
 
   def init(guild_id) do
-    {:ok, %{
-      id: guild_id,
-      members: MapSet.new(),
-      presences: Map.new(),
-      sessions: MapSet.new()
-    }}
+    {:ok,
+     %{
+       id: guild_id,
+       members: MapSet.new(),
+       presences: Map.new(),
+       sessions: MapSet.new()
+     }}
   end
 
   # Session API
   @spec subscribe(pid(), pid()) :: :ok
   def subscribe(pid, session_pid) do
-    Logger.debug "Subscribing #{inspect session_pid} to #{inspect pid}"
+    Logger.debug("Subscribing #{inspect(session_pid)} to #{inspect(pid)}")
     GenServer.cast(pid, {:subscribe, session_pid})
   end
 
   @spec unsubscribe(pid(), pid()) :: :ok
   def unsubscribe(pid, session_pid) do
-    Logger.debug "Unsubscribing #{inspect session_pid} to #{inspect pid}"
+    Logger.debug("Unsubscribing #{inspect(session_pid)} to #{inspect(pid)}")
     GenServer.cast(pid, {:unsubscribe, session_pid})
   end
 
   # shared API between gRPC and Sessions
   @spec publish(pid(), any()) :: :ok
   def publish(pid, message) do
-    Logger.debug "Publishing #{inspect message} to #{inspect pid}"
+    Logger.debug("Publishing #{inspect(message)} to #{inspect(pid)}")
     GenServer.cast(pid, {:publish, message})
   end
 

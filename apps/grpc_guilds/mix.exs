@@ -1,9 +1,9 @@
-defmodule Derailed.Ready.MixProject do
+defmodule Derailed.GRPC.Guild.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :ready,
+      app: :grpc_guilds,
       version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -18,14 +18,20 @@ defmodule Derailed.Ready.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {Derailed.GRPC.Guild.Application, []}
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:postgrex, "~> 0.16.5"}
+      {:gen_registry, "~> 1.3"},
+      {:ex_hash_ring, "~> 6.0"},
+      {:fastglobal, "~> 1.0"},
+      {:jsonrs, "~> 0.2.1"},
+      {:grpc_protos, in_umbrella: true},
+      {:guilds, in_umbrella: true}
     ]
   end
 end
