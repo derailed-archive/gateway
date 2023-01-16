@@ -10,8 +10,8 @@ defmodule Derailed.Guild.Application do
     Dotenv.load!()
 
     children = [
-      {GenRegistry, worker_module: Derailed.Guild},
-      {Postgrex, [url: Dotenv.get("PG_URI")]}
+      {GenRegistry, worker_module: Derailed.Guild}
+      # {Postgrex, [url: Dotenv.get("PG_URI")]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

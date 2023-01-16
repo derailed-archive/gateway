@@ -27,11 +27,13 @@ defmodule Derailed.GRPC.Users.MixProject do
   defp deps do
     [
       {:gen_registry, "~> 1.3"},
-      {:ex_hash_ring, "~> 6.0"},
-      {:fastglobal, "~> 1.0"},
       {:jsonrs, "~> 0.2.1"},
       {:grpc_protos, in_umbrella: true},
-      {:sessions, in_umbrella: true}
+      {:sessions, in_umbrella: true},
+      {:dotenv, "~> 3.1.0"},
+      {:ex_hash_ring, "~> 6.0"},
+      {:fastglobal, "~> 1.0"},
+      {:grpc, "~> 0.5"}
     ]
   end
 end

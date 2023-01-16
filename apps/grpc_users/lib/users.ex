@@ -1,6 +1,7 @@
 defmodule Derailed.GRPC.User do
   @moduledoc false
   alias ExHashRing.Ring
+  use GRPC.Server, service: Derailed.GRPC.User.Proto.Service
 
   @doc """
   Publishes a message to all of the Sessions of this specific user.
@@ -12,7 +13,7 @@ defmodule Derailed.GRPC.User do
 
     {:ok, message} = Jsonrs.decode(publish_info.message.data)
 
-    sessions_hr = FastGlobal.get(:sessions)
+    sessions_hr = Application.get_env(:derailed_gusers, :sessions)
 
     {:ok, node_loc} = Ring.find_node(sessions_hr, user_id)
 

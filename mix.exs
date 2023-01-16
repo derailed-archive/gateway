@@ -16,10 +16,6 @@ defmodule Derailed.MixProject do
   #
   # Run "mix help deps" for examples and options.
   defp deps do
-    [
-      {:dotenv, "~> 3.1.0"},
-      {:ex_hash_ring, "~> 6.0"},
-      {:fastglobal, "~> 1.0"}
-    ]
+    []
   end
 end

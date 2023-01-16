@@ -1,5 +1,6 @@
 defmodule Derailed.GRPC.Guild do
   alias ExHashRing.Ring
+  use GRPC.Server, service: Derailed.GRPC.Guild.Proto.Service
 
   @doc """
   Process responsible for publishing messages to Guilds
@@ -11,7 +12,7 @@ defmodule Derailed.GRPC.Guild do
 
     {:ok, message} = Jsonrs.decode(publish_info.message.data)
 
-    guild_hr = FastGlobal.get(:guild)
+    guild_hr = Application.get_env(:derailed_gguilds, :guild)
 
     {:ok, node_loc} = Ring.find_node(guild_hr, guild_id)
 
@@ -30,14 +31,15 @@ defmodule Derailed.GRPC.Guild do
   end
 
   @doc """
-  Responsible process for `GET /guilds/.../preview` and Invite Previews
+  Responsible process for `GET /guilds/.../preview` and Invite Previews.
+  Returns the amount of presences and if the Guild is available
   """
   @spec get_guild_info(Derailed.GRPC.Guild.Proto.GetGuildInfo, GRPC.Server.Stream.t()) ::
           Derailed.GRPC.Guild.Proto.RepliedGuildInfo.t()
   def get_guild_info(guild, _stream) do
     guild_id = guild.guild_id
 
-    guild_hr = FastGlobal.get(:guild)
+    guild_hr = Application.get_env(:derailed_gguilds, :guild)
 
     {:ok, node_loc} = Ring.find_node(guild_hr, guild_id)
 

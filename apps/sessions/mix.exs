@@ -27,7 +27,10 @@ defmodule Derailed.Session.MixProject do
   defp deps do
     [
       {:manifold, "~> 1.5"},
-      {:guilds, in_umbrella: true}
+      {:guilds, in_umbrella: true},
+      {:dotenv, "~> 3.1.0"},
+      {:ex_hash_ring, "~> 6.0"},
+      {:fastglobal, "~> 1.0"}
     ]
   end
 end
