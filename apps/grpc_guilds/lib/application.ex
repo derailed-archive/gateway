@@ -8,7 +8,8 @@ defmodule Derailed.GRPC.Guild.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Derailed.GRPC.Guild.Endpoint, 50051}
+      {Derailed.GRPC.Guild.Endpoint, 50051},
+      {Task.Supervisor, name: Derailed.GRPC.Guild.AsyncIO}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

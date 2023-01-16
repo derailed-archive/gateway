@@ -8,6 +8,7 @@ RUN mix local.hex --force
 RUN mix local.rebar --force
 # release a production version
 ENV MIX_ENV=prod
+ENV RELEASE_COOKIE=derailed-gateway-cookie
 RUN mix deps.get
 RUN mix deps.compile
 RUN mix release

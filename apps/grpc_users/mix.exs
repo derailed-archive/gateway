@@ -19,7 +19,7 @@ defmodule Derailed.GRPC.Users.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {GrpcUsers.Application, []}
+      mod: {Derailed.GRPC.Users.Application, []}
     ]
   end
 

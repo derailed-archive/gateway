@@ -20,7 +20,6 @@ defmodule Derailed.GRPC.Guild do
       case GenRegistry.lookup(Derailed.Guild, guild_id) do
         {:ok, guild_pid} ->
           Derailed.Guild.publish(guild_pid, message)
-          guild_pid
 
         {:error, :not_found} ->
           self()
@@ -28,5 +27,37 @@ defmodule Derailed.GRPC.Guild do
     end)
 
     Derailed.GRPC.Guild.Proto.Publr.new(message: "Success")
+  end
+
+  @doc """
+  Responsible process for `GET /guilds/.../preview` and Invite Previews
+  """
+  @spec get_guild_info(Derailed.GRPC.Guild.Proto.GetGuildInfo, GRPC.Server.Stream.t()) ::
+          Derailed.GRPC.Guild.Proto.RepliedGuildInfo.t()
+  def get_guild_info(guild, _stream) do
+    guild_id = guild.guild_id
+
+    guild_hr = FastGlobal.get(:guild)
+
+    {:ok, node_loc} = Ring.find_node(guild_hr, guild_id)
+
+    task =
+      Task.Supervisor.async({Derailed.GRPC.Guild.AsyncIO, String.to_atom(node_loc)}, fn ->
+        case GenRegistry.lookup(Derailed.Guild, guild_id) do
+          {:ok, guild_pid} ->
+            {:ok, presences} = Derailed.Guild.get_guild_info(guild_pid)
+            {:ok, presences}
+
+          {:error, :not_found} ->
+            {:ok, 0}
+        end
+      end)
+
+    {:ok, presences} = Task.await(task)
+
+    Derailed.GRPC.Guild.Proto.RepliedGuildInfo.new(
+      presences: presences,
+      available: presences != 0
+    )
   end
 end

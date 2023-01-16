@@ -8,8 +8,7 @@ defmodule Derailed.GRPC.Users.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: GrpcUsers.Worker.start_link(arg)
-      # {GrpcUsers.Worker, arg}
+      {Derailed.GRPC.User.Endpoint, 50052}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

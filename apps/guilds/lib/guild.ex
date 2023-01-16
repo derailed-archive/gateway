@@ -42,6 +42,12 @@ defmodule Derailed.Guild do
     GenServer.cast(pid, {:publish, message})
   end
 
+  @spec get_guild_info(pid()) :: {:ok, integer()}
+  def get_guild_info(pid) do
+    Logger.debug("Getting Guild info for #{inspect(pid)}")
+    GenServer.call(pid, :get_guild_info)
+  end
+
   # backend server api
   def handle_cast({:subscribe, pid}, state) do
     {:noreply, %{state | sessions: MapSet.put(state.sessions, pid)}}
@@ -54,5 +60,9 @@ defmodule Derailed.Guild do
   def handle_cast({:publish, message}, state) do
     Manifold.send(Enum.to_list(state.sessions), message)
     {:noreply, state}
+  end
+
+  def handle_call(:get_guild_info, _from, state) do
+    {:reply, {:ok, presence_count: Enum.count(state.presences)}, state}
   end
 end

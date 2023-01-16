@@ -1,4 +1,4 @@
-defmodule Derailed.GRPC.Guild.Endpoint do
+defmodule Derailed.GRPC.User.Endpoint do
   use GRPC.Endpoint
 
   intercept(GRPC.Logger.Server)

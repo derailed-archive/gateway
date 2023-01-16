@@ -1,4 +1,33 @@
 defmodule Derailed.GRPC.User do
   @moduledoc false
-  # TODO!
+  alias ExHashRing.Ring
+
+  @doc """
+  Publishes a message to all of the Sessions of this specific user.
+  """
+  @spec publish(Derailed.GRPC.User.Proto.UPubl.t(), GRPC.Server.Stream.t()) ::
+          Derailed.GRPC.User.Proto.UPublr.t()
+  def publish(publish_info, _stream) do
+    user_id = publish_info.user_id
+
+    {:ok, message} = Jsonrs.decode(publish_info.message.data)
+
+    sessions_hr = FastGlobal.get(:sessions)
+
+    {:ok, node_loc} = Ring.find_node(sessions_hr, user_id)
+
+    Node.spawn(String.to_atom(node_loc), fn ->
+      case GenRegistry.lookup(Derailed.Session.Registry, user_id) do
+        {:ok, session_reg} ->
+          {:ok, sessions} = Derailed.Session.Registry.get_sessions(session_reg)
+
+          Enum.each(sessions, &Manifold.send(&1, message))
+
+        {:error, :not_found} ->
+          self()
+      end
+    end)
+
+    Derailed.GRPC.User.Proto.UPublr.new(message: "Success")
+  end
 end
