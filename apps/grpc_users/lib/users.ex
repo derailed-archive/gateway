@@ -13,21 +13,24 @@ defmodule Derailed.GRPC.User do
 
     {:ok, message} = Jsonrs.decode(publish_info.message.data)
 
-    sessions_hr = Application.get_env(:derailed_gusers, :sessions)
+    sessions_hr = Application.get_env(:derailed_gusers, :session)
 
     {:ok, node_loc} = Ring.find_node(sessions_hr, user_id)
 
-    Node.spawn(String.to_atom(node_loc), fn ->
-      case GenRegistry.lookup(Derailed.Session.Registry, user_id) do
-        {:ok, session_reg} ->
-          {:ok, sessions} = Derailed.Session.Registry.get_sessions(session_reg)
+    task =
+      Task.Supervisor.async({Derailed.GRPC.User.AsyncIO, String.to_atom(node_loc)}, fn ->
+        case GenRegistry.lookup(Derailed.Session.Registry, user_id) do
+          {:ok, session_reg} ->
+            {:ok, sessions} = Derailed.Session.Registry.get_sessions(session_reg)
 
-          Enum.each(sessions, &Manifold.send(&1, message))
+            Enum.each(sessions, &Manifold.send(&1, message))
 
-        {:error, :not_found} ->
-          self()
-      end
-    end)
+          {:error, :not_found} ->
+            self()
+        end
+      end)
+
+    Task.await(task)
 
     Derailed.GRPC.User.Proto.UPublr.new(message: "Success")
   end

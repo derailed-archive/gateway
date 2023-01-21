@@ -33,7 +33,8 @@ defmodule Derailed.GRPC.Users.MixProject do
       {:dotenv, "~> 3.1.0"},
       {:ex_hash_ring, "~> 6.0"},
       {:fastglobal, "~> 1.0"},
-      {:grpc, "~> 0.5"}
+      {:grpc, "~> 0.5"},
+      {:zen_monitor, "~> 2.0.2"}
     ]
   end
 end

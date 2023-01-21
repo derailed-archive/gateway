@@ -16,12 +16,16 @@ defmodule Derailed.GRPC.Guild.Application do
 
     Dotenv.load()
 
-    guild_nodes = System.get_env("GUILD_NODES")
+    guild_nodes = String.split(System.get_env("GUILD_NODES"), "/")
+
+    for guild_node <- guild_nodes do
+      ZenMonitor.connect(String.to_atom(guild_node))
+    end
 
     {:ok, guild_node_ring} = Ring.start_link()
-    Ring.add_nodes(guild_node_ring, String.split(guild_nodes, "/"))
+    Ring.add_nodes(guild_node_ring, guild_nodes)
 
-    Application.put_env(:derailed_gguilds, :guild, guild_node_ring)
+    Application.put_env(:derailed_gguilds, :guilds, guild_node_ring)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

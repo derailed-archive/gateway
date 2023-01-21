@@ -12,20 +12,22 @@ defmodule Derailed.GRPC.Guild do
 
     {:ok, message} = Jsonrs.decode(publish_info.message.data)
 
-    guild_hr = Application.get_env(:derailed_gguilds, :guild)
+    guild_hr = Application.get_env(:derailed_gguilds, :guilds)
 
     {:ok, node_loc} = Ring.find_node(guild_hr, guild_id)
 
-    # TODO: maybe check if the publish is successful or not
-    Node.spawn(String.to_atom(node_loc), fn ->
-      case GenRegistry.lookup(Derailed.Guild, guild_id) do
-        {:ok, guild_pid} ->
-          Derailed.Guild.publish(guild_pid, message)
+    task =
+      Task.Supervisor.async({Derailed.GRPC.Guild.AsyncIO, String.to_atom(node_loc)}, fn ->
+        case GenRegistry.lookup(Derailed.Guild, guild_id) do
+          {:ok, guild_pid} ->
+            Derailed.Guild.publish(guild_pid, message)
 
-        {:error, :not_found} ->
-          self()
-      end
-    end)
+          {:error, :not_found} ->
+            self()
+        end
+      end)
+
+    Task.await(task)
 
     Derailed.GRPC.Guild.Proto.Publr.new(message: "Success")
   end

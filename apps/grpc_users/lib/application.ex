@@ -8,17 +8,22 @@ defmodule Derailed.GRPC.Users.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      GRPC.Server.Supervisor.child_spec(Derailed.GRPC.User.Endpoint, 50052)
+      GRPC.Server.Supervisor.child_spec(Derailed.GRPC.User.Endpoint, 50052),
+      {Task.Supervisor, name: Derailed.GRPC.User.AsyncIO}
     ]
 
     alias ExHashRing.Ring
 
     Dotenv.load()
 
-    session_nodes = System.get_env("SESSION_NODES")
+    session_nodes = String.split(System.get_env("SESSION_NODES"), "/")
+
+    for session_node <- session_nodes do
+      ZenMonitor.connect(String.to_atom(session_node))
+    end
 
     {:ok, session_node_ring} = Ring.start_link()
-    Ring.add_nodes(session_node_ring, String.split(session_nodes, "/"))
+    Ring.add_nodes(session_node_ring, session_nodes)
 
     Application.put_env(:derailed_gusers, :session, session_node_ring)
 
