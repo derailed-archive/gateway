@@ -28,19 +28,15 @@ defmodule Derailed.GRPC.Guild do
   def get_guild_info(guild, _stream) do
     guild_id = guild.guild_id
 
-    t = :erlang.monotonic_time()
-
     case GenRegistry.lookup(Derailed.Guild, guild_id) do
       {:ok, guild_pid} ->
         {:ok, presences} = Derailed.Guild.get_guild_info(guild_pid)
-        IO.puts("Elapsed time: #{:erlang.monotonic_time() - t}")
         Derailed.GRPC.Guild.Proto.RepliedGuildInfo.new(
           presences: presences,
           available: true
         )
 
       {:error, :not_found} ->
-        IO.puts("Elapsed time: #{:erlang.monotonic_time() - t}")
         Derailed.GRPC.Guild.Proto.RepliedGuildInfo.new(
           presences: 0,
           available: false
