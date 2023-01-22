@@ -17,6 +17,7 @@ defmodule Derailed.GRPC.User do
         {:ok, sessions} = Derailed.Session.Registry.get_sessions(session_reg)
 
         Enum.each(sessions, &Manifold.send(&1, message))
+      {:error, :not_found} -> :ok
     end
 
     Derailed.GRPC.User.Proto.UPublr.new(message: "Success")

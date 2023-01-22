@@ -14,6 +14,7 @@ defmodule Derailed.GRPC.Guild do
     case GenRegistry.lookup(Derailed.Guild, guild_id) do
         {:ok, guild_pid} ->
           Derailed.Guild.publish(guild_pid, message)
+        {:error, :not_found} -> :ok
       end
 
     Derailed.GRPC.Guild.Proto.Publr.new(message: "Success")
