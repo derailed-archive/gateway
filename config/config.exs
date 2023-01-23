@@ -16,3 +16,5 @@ import Config
 #       format: "$date $time [$level] $metadata$message\n",
 #       metadata: [:user_id]
 #
+
+config :database, ecto_repos: [Derailed.Database.Repo]
