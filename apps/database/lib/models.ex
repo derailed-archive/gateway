@@ -10,14 +10,14 @@ defmodule Derailed.Database.User do
   @primary_key {:id, :integer, []}
 
   schema "users" do
-    field :username, :string
-    field :discriminator, :string
-    field :email, :string
-    field :password, :string
-    field :flags, :integer
-    field :system, :boolean
-    field :deletor_job_id, :string
-    field :suspended, :boolean
+    field(:username, :string)
+    field(:discriminator, :string)
+    field(:email, :string)
+    field(:password, :string)
+    field(:flags, :integer)
+    field(:system, :boolean)
+    field(:deletor_job_id, :string)
+    field(:suspended, :boolean)
   end
 end
 
@@ -27,7 +27,7 @@ defmodule Derailed.Database.Settings do
   @primary_key {:user_id, :integer, []}
 
   schema "settings" do
-    field :status, :string
+    field(:status, :string)
   end
 end
 
@@ -37,9 +37,9 @@ defmodule Derailed.Database.GuildPosition do
   @primary_key false
 
   schema "guild_positions" do
-    field :user_id, :integer, primary_key: true
-    field :guild_id, :integer, primary_key: true
-    field :position, :integer
+    field(:user_id, :integer, primary_key: true)
+    field(:guild_id, :integer, primary_key: true)
+    field(:position, :integer)
   end
 end
 
@@ -49,10 +49,10 @@ defmodule Derailed.Database.Guild do
   @primary_key {:id, :integer, []}
 
   schema "guilds" do
-    field :name, :string
-    field :flags, :integer
-    field :owner_id, :integer
-    field :permissions, :integer
+    field(:name, :string)
+    field(:flags, :integer)
+    field(:owner_id, :integer)
+    field(:permissions, :integer)
   end
 end
 
@@ -62,9 +62,9 @@ defmodule Derailed.Database.Member do
   @primary_key false
 
   schema "members" do
-    field :user_id, :integer
-    field :guild_id, :integer
-    field :nick, :string
+    field(:user_id, :integer)
+    field(:guild_id, :integer)
+    field(:nick, :string)
   end
 end
 
@@ -74,8 +74,20 @@ defmodule Derailed.Database.Activity do
   @primary_key {:user_id, :integer, []}
 
   schema "activities" do
-    field :type, :integer
-    field :created_at, :utc_datetime
-    field :content, :string
+    field(:type, :integer)
+    field(:created_at, :utc_datetime)
+    field(:content, :string)
+  end
+end
+
+defmodule Derailed.Database.MemberRole do
+  use Ecto.Schema
+
+  @primary_key false
+
+  schema "member_roles" do
+    field(:user_id, :integer, primary_key: true)
+    field(:role_id, :integer, primary_key: true)
+    field(:guild_id, :integer, primary_key: true)
   end
 end

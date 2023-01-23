@@ -11,7 +11,16 @@ defmodule Derailed.Guild.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      xref: [
+        exclude: [
+          Derailed.Database.Repo,
+          Ecto.Query.Builder,
+          Ecto.Query,
+          Derailed.Database.Member,
+          Derailed.Database.MemberRole
+        ]
+      ]
     ]
   end
 
@@ -30,7 +39,8 @@ defmodule Derailed.Guild.MixProject do
       {:postgrex, "~> 0.16.5"},
       {:dotenv, "~> 3.1.0"},
       {:manifold, "~> 1.5"},
-      {:zen_monitor, "~> 2.0.2"}
+      {:zen_monitor, "~> 2.0.2"},
+      {:database, in_umbrella: true}
     ]
   end
 end

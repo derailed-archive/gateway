@@ -4,6 +4,7 @@ defmodule Derailed.Guild do
   """
   require Logger
   use GenServer
+  import Ecto.Query
 
   # GenServer API
 
@@ -16,7 +17,6 @@ defmodule Derailed.Guild do
     {:ok,
      %{
        id: guild_id,
-       members: MapSet.new(),
        presences: Map.new(),
        sessions: MapSet.new()
      }}
@@ -50,11 +50,19 @@ defmodule Derailed.Guild do
 
   # backend server api
   def handle_cast({:subscribe, pid}, state) do
+    ZenMonitor.monitor(pid)
     {:noreply, %{state | sessions: MapSet.put(state.sessions, pid)}}
   end
 
   def handle_cast({:unsubscribe, pid}, state) do
-    {:noreply, %{state | sessions: MapSet.delete(state.sessions, pid)}}
+    nmp = MapSet.delete(state.sessions, pid)
+    ZenMonitor.demonitor(pid)
+
+    if nmp == MapSet.new() do
+      GenRegistry.stop(Derailed.Guild, state.id)
+    end
+
+    {:noreply, %{state | sessions: nmp}}
   end
 
   def handle_cast({:publish, message}, state) do
@@ -64,5 +72,50 @@ defmodule Derailed.Guild do
 
   def handle_call(:get_guild_info, _from, state) do
     {:reply, {:ok, presence_count: Enum.count(state.presences)}, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, {:zen_monitor, _reason}}, state) do
+    {:noreply,
+     %{
+       state
+       | sessions: MapSet.delete(state.sessions, pid),
+         presences: Map.delete(state.presences, pid)
+     }}
+  end
+
+  def handle_call({:get_guild_members, session_pid}, state) do
+    member_query =
+      from(m in Derailed.Database.Member,
+        where: m.guild_id == ^state.id,
+        select: m
+      )
+
+    members = Derailed.Database.Repo.all(member_query)
+
+    members =
+      Enum.map(members, fn m ->
+        member = Map.new(m)
+
+        roles_query =
+          from(mr in Derailed.Database.MemberRole,
+            where: mr.user_id == ^Map.get(member, "id"),
+            where: mr.guild_id == ^state.id,
+            select: mr.role_id
+          )
+
+        roles_lick = Derailed.Database.Repo.all(roles_query)
+
+        roles =
+          Enum.map(roles_lick, fn rl ->
+            rl.role_id
+          end)
+
+        Map.put(member, "roles", roles)
+      end)
+
+    Manifold.send(session_pid, %{
+      "t" => "MEMBER_CACHE_UPDATE",
+      "d" => %{"guild_id" => state.guild_id, "members" => members}
+    })
   end
 end

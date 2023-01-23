@@ -8,7 +8,7 @@ defmodule Derailed.GRPC.Guild.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      GRPC.Server.Supervisor.child_spec(Derailed.GRPC.Guild.Endpoint, 50051),
+      GRPC.Server.Supervisor.child_spec(Derailed.GRPC.Guild.Endpoint, 50051)
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -20,37 +20,37 @@ defmodule Derailed.MixProject do
 
         stack: [
           grpc_guilds: :permanent,
-          grpc_users:  :permanent,
-          guilds:      :permanent,
-          sessions:    :permanent
+          grpc_users: :permanent,
+          guilds: :permanent,
+          sessions: :permanent,
+          database: :permanent
         ],
-
         grpc: [
           grpc_guilds: :permanent,
-          grpc_users:  :permanent
+          grpc_users: :permanent,
+          database: :permanent
         ],
-
         basic: [
-          guilds:      :permanent,
-          sessions:    :permanent,
+          guilds: :permanent,
+          sessions: :permanent,
+          database: :permanent
         ],
         # TODO:
         # ws: [],
 
         grpc_users: [
-          grpc_users:  :permanent
+          grpc_users: :permanent
         ],
-
         grpc_guilds: [
           grpc_guilds: :permanent
         ],
-
         guild: [
-          guilds:      :permanent
+          guilds: :permanent,
+          database: :permanent
         ],
-
         session: [
-          sessions:    :permanent
+          sessions: :permanent,
+          database: :permanent
         ]
       ]
     ]
@@ -63,7 +63,7 @@ defmodule Derailed.MixProject do
   # Run "mix help deps" for examples and options.
   defp deps do
     [
-      {:dotenv, "~> 3.1.0"},
+      {:dotenv, "~> 3.1.0"}
     ]
   end
 end

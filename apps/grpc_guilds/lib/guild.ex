@@ -12,10 +12,12 @@ defmodule Derailed.GRPC.Guild do
     {:ok, message} = Jsonrs.decode(publish_info.message.data)
 
     case GenRegistry.lookup(Derailed.Guild, guild_id) do
-        {:ok, guild_pid} ->
-          Derailed.Guild.publish(guild_pid, message)
-        {:error, :not_found} -> :ok
-      end
+      {:ok, guild_pid} ->
+        Derailed.Guild.publish(guild_pid, %{t: publish_info.event, d: message})
+
+      {:error, :not_found} ->
+        :ok
+    end
 
     Derailed.GRPC.Guild.Proto.Publr.new(message: "Success")
   end
@@ -32,6 +34,7 @@ defmodule Derailed.GRPC.Guild do
     case GenRegistry.lookup(Derailed.Guild, guild_id) do
       {:ok, guild_pid} ->
         {:ok, presences} = Derailed.Guild.get_guild_info(guild_pid)
+
         Derailed.GRPC.Guild.Proto.RepliedGuildInfo.new(
           presences: presences,
           available: true
