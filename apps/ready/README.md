@@ -1,21 +1,6 @@
 # Derailed.Ready
 
-**TODO: Add description**
+Derailed module made to be spawned separately.
+Specializes in making a user ready and authenticating them.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ready` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:ready, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/ready>.
-
+**Cannot, *by any means*, be ran separately.**
