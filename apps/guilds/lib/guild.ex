@@ -96,7 +96,7 @@ defmodule Derailed.Guild do
 
         roles_query =
           from(mr in Derailed.Database.MemberRole,
-            where: mr.user_id == ^Map.get(member, "id"),
+            where: mr.user_id == ^member.id,
             where: mr.guild_id == ^state.id,
             select: mr.role_id
           )
@@ -108,7 +108,17 @@ defmodule Derailed.Guild do
             rl.role_id
           end)
 
-        Map.put(member, "roles", roles)
+        user_query =
+          from(u in Derailed.Database.User,
+            where: u.id == ^member.id,
+            select: u
+          )
+
+        user = Map.new(Derailed.Database.Repo.one(user_query))
+
+        member = Map.put(member, "roles", roles)
+        member = Map.delete(member, "user_id")
+        Map.put(member, "user", user)
       end)
 
     Manifold.send(session_pid, %{
