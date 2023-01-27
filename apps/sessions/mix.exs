@@ -30,7 +30,8 @@ defmodule Derailed.Session.MixProject do
       {:guilds, in_umbrella: true},
       {:dotenv, "~> 3.1.0"},
       {:ex_hash_ring, "~> 6.0"},
-      {:zen_monitor, "~> 2.0.2"}
+      {:zen_monitor, "~> 2.0.2"},
+      {:database, in_umbrella: true}
     ]
   end
 end

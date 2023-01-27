@@ -17,16 +17,15 @@ defmodule Derailed.Guild do
     {:ok,
      %{
        id: guild_id,
-       presences: Map.new(),
-       sessions: MapSet.new()
+       sessions: Map.new()
      }}
   end
 
   # Session API
-  @spec subscribe(pid(), pid()) :: :ok
-  def subscribe(pid, session_pid) do
+  @spec subscribe(pid(), pid(), integer()) :: :ok
+  def subscribe(pid, session_pid, user_id) do
     Logger.debug("Subscribing #{inspect(session_pid)} to #{inspect(pid)}")
-    GenServer.cast(pid, {:subscribe, session_pid})
+    GenServer.cast(pid, {:subscribe, session_pid, user_id})
   end
 
   @spec unsubscribe(pid(), pid()) :: :ok
@@ -49,16 +48,16 @@ defmodule Derailed.Guild do
   end
 
   # backend server api
-  def handle_cast({:subscribe, pid}, state) do
+  def handle_cast({:subscribe, pid, user_id}, state) do
     ZenMonitor.monitor(pid)
-    {:noreply, %{state | sessions: MapSet.put(state.sessions, pid)}}
+    {:noreply, %{state | sessions: Map.put(state.sessions, pid, %{pid: pid, user_id: user_id})}}
   end
 
   def handle_cast({:unsubscribe, pid}, state) do
-    nmp = MapSet.delete(state.sessions, pid)
+    nmp = Map.delete(state.sessions, pid)
     ZenMonitor.demonitor(pid)
 
-    if nmp == MapSet.new() do
+    if nmp == Map.new() do
       GenRegistry.stop(Derailed.Guild, state.id)
     end
 
@@ -66,20 +65,19 @@ defmodule Derailed.Guild do
   end
 
   def handle_cast({:publish, message}, state) do
-    Manifold.send(Enum.to_list(state.sessions), message)
+    Enum.each(state.sessions, &Manifold.send(&1.pid, message))
     {:noreply, state}
   end
 
   def handle_call(:get_guild_info, _from, state) do
-    {:reply, {:ok, presence_count: Enum.count(state.presences)}, state}
+    {:reply, {:ok, presence_count: Enum.count(state.session)}, state}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, {:zen_monitor, _reason}}, state) do
     {:noreply,
      %{
        state
-       | sessions: MapSet.delete(state.sessions, pid),
-         presences: Map.delete(state.presences, pid)
+       | sessions: Map.delete(state.sessions, pid)
      }}
   end
 
