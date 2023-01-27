@@ -10,17 +10,24 @@ defmodule Derailed.Session do
   end
 
   def init({session_id, ws_pid, user_id}) do
+    ZenMonitor.monitor(ws_pid)
+
     {:ok,
      %{
        id: session_id,
        guild_pids: Map.new(),
        ws_pid: ws_pid,
-       user_id: user_id
+       user_id: user_id,
+       down: false
      }}
   end
 
   def sync_guilds(pid) do
     GenServer.cast(pid, :sync_guilds)
+  end
+
+  def resume(pid, ws_pid) do
+    GenServer.cast(pid, {:resume_session, ws_pid})
   end
 
   # server
@@ -46,5 +53,30 @@ defmodule Derailed.Session do
     end)
 
     {:noreply, state}
+  end
+
+  def handle_cast({:resume_session, ws_pid}, state) do
+    {:noreply, %{state | down: false, ws_pid: ws_pid}}
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, {:zen_monitor, _reason}}, state) do
+    :erlang.send_after(120_000, self(), :sip)
+
+    {:noreply,
+     %{
+       state
+       | ws_pid: nil,
+         down: true
+     }}
+  end
+
+  def handle_info(:sip, state) do
+    if state.down == true do
+      {:ok, pid} = GenRegistry.lookup(Derailed.Session.Registry, state.user_id)
+
+      Derailed.Session.Registry.remove_session(pid, self())
+
+      GenRegistry.stop(Derailed.Session, state.id)
+    end
   end
 end

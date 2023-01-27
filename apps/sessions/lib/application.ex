@@ -9,6 +9,7 @@ defmodule Derailed.Session.Application do
   def start(_type, _args) do
     children = [
       {GenRegistry, worker_module: Derailed.Session.Registry},
+      {GenRegistry, worker_module: Derailed.Session},
       {Task.Supervisor, name: Derailed.Session.AsyncIO}
     ]
 

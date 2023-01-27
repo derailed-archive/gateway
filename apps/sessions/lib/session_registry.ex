@@ -48,7 +48,13 @@ defmodule Derailed.Session.Registry do
   end
 
   def handle_cast({:remove, session_pid}, state) do
-    {:noreply, %{state | session_pids: MapSet.delete(state.session_pids, session_pid)}}
+    mps = MapSet.delete(state.session_pids, session_pid)
+
+    if mps == MapSet.new() do
+      GenRegistry.stop(Derailed.Session.Registry, state.id)
+    end
+
+    {:noreply, %{state | session_pids: mps}}
   end
 
   def handle_call(:get_all, _from, state) do
